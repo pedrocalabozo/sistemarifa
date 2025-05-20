@@ -36,17 +36,17 @@ export default function Header() {
         <nav className="flex items-center space-x-2 md:space-x-4">
           <Button variant="ghost" asChild>
             <Link href="/raffles" className="flex items-center">
-              <ListChecks className="mr-1 h-4 w-4 md:mr-2 md:h-5 md:w-5" /> <span className="hidden md:inline">Raffles</span>
+              <ListChecks className="mr-1 h-4 w-4 md:mr-2 md:h-5 md:w-5" /> <span className="hidden md:inline">Rifas</span>
             </Link>
           </Button>
           <Button variant="ghost" asChild>
             <Link href="/winners" className="flex items-center">
-              <Crown className="mr-1 h-4 w-4 md:mr-2 md:h-5 md:w-5" /> <span className="hidden md:inline">Winners</span>
+              <Crown className="mr-1 h-4 w-4 md:mr-2 md:h-5 md:w-5" /> <span className="hidden md:inline">Ganadores</span>
             </Link>
           </Button>
           <Button variant="ghost" asChild>
             <Link href="/rules" className="flex items-center">
-              <BookOpen className="mr-1 h-4 w-4 md:mr-2 md:h-5 md:w-5" /> <span className="hidden md:inline">Rules</span>
+              <BookOpen className="mr-1 h-4 w-4 md:mr-2 md:h-5 md:w-5" /> <span className="hidden md:inline">Reglas</span>
             </Link>
           </Button>
           {isLoading ? (
@@ -56,7 +56,7 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={`https://placehold.co/40x40.png?text=${getInitials(user.name, user.lastName)}`} alt={user.name} data-ai-hint="profile avatar" />
+                    <AvatarImage src={`https://placehold.co/40x40.png?text=${getInitials(user.name, user.lastName)}`} alt={user.name || 'Usuario'} data-ai-hint="avatar perfil" />
                     <AvatarFallback>{getInitials(user.name, user.lastName)}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -73,17 +73,17 @@ export default function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/profile')}>
                   <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
+                  <span>Perfil</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={logout}>
                   <LogIn className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>Cerrar Sesión</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Button onClick={() => router.push('/login')} className="flex items-center">
-              <LogIn className="mr-1 h-4 w-4 md:mr-2 md:h-5 md:w-5" /> Login
+              <LogIn className="mr-1 h-4 w-4 md:mr-2 md:h-5 md:w-5" /> Iniciar Sesión
             </Button>
           )}
         </nav>

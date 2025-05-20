@@ -27,7 +27,7 @@ export default function PaymentSummary() {
     return (
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-xl">Loading Purchase Summary...</CardTitle>
+          <CardTitle className="text-xl">Cargando Resumen de Compra...</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-3">
@@ -45,27 +45,27 @@ export default function PaymentSummary() {
       <CardHeader>
         <CardTitle className="text-2xl text-primary flex items-center">
           <Ticket className="mr-3 h-7 w-7" />
-          Order Summary
+          Resumen del Pedido
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <h3 className="font-semibold text-lg">Raffle: {purchaseInfo.raffleTitle}</h3>
+          <h3 className="font-semibold text-lg">Rifa: {purchaseInfo.raffleTitle}</h3>
         </div>
         <div className="flex items-center">
           <Hash className="mr-2 h-5 w-5 text-primary" />
-          <span className="font-medium">Number of Tickets:</span>
+          <span className="font-medium">Número de Boletos:</span>
           <span className="ml-auto text-lg font-semibold">{purchaseInfo.numTickets}</span>
         </div>
         <div className="flex items-center">
           <DollarSign className="mr-2 h-5 w-5 text-primary" />
-          <span className="font-medium">Total Price:</span>
+          <span className="font-medium">Precio Total:</span>
           <span className="ml-auto text-lg font-semibold">${purchaseInfo.totalPrice.toFixed(2)}</span>
         </div>
         <div>
           <h4 className="font-medium mb-2 flex items-center">
              <Ticket className="mr-2 h-5 w-5 text-primary" />
-            Your Selected Numbers:
+            Tus Números Seleccionados:
           </h4>
           <div className="flex flex-wrap gap-2">
             {purchaseInfo.generatedNumbers.map(num => (

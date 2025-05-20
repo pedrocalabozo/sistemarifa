@@ -4,6 +4,7 @@ export interface Raffle {
   description: string;
   shortDescription: string;
   imageUrl: string;
+  dataAiHint?: string; // Para sugerencias de imágenes de IA
   pricePerTicket: number;
   maxNumbers: number; // e.g., 900
   drawDate: string; // ISO string

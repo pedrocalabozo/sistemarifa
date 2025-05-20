@@ -23,16 +23,16 @@ const GoogleIcon = () => (
 export default function LoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
-  const [name, setName] = useState(''); // Optional: to simulate Google returning name
+  const [name, setName] = useState(''); // Opcional: para simular que Google devuelve el nombre
 
   const handleGoogleLogin = (e: FormEvent) => {
     e.preventDefault();
-    // In a real app, this would initiate the Google OAuth flow.
-    // For this mock, we'll use the entered email.
+    // En una aplicación real, esto iniciaría el flujo OAuth de Google.
+    // Para esta simulación, usaremos el correo electrónico ingresado.
     if (email) {
       login(email, name || undefined);
     } else {
-      alert("Please enter an email to simulate login.");
+      alert("Por favor, ingresa un correo electrónico para simular el inicio de sesión.");
     }
   };
 
@@ -41,17 +41,17 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
           <Ticket className="mx-auto h-12 w-12 text-primary mb-2" />
-          <CardTitle className="text-3xl font-bold">Welcome to RifaFacil!</CardTitle>
-          <CardDescription>Sign in to participate in exciting raffles.</CardDescription>
+          <CardTitle className="text-3xl font-bold">¡Bienvenido a RifaFacil!</CardTitle>
+          <CardDescription>Inicia sesión para participar en rifas emocionantes.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleGoogleLogin} className="space-y-6">
             <div>
-              <Label htmlFor="email">Email (for simulation)</Label>
+              <Label htmlFor="email">Correo electrónico (para simulación)</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="user@example.com"
+                placeholder="usuario@ejemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -59,11 +59,11 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <Label htmlFor="name">Name (optional, for simulation)</Label>
+              <Label htmlFor="name">Nombre (opcional, para simulación)</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Your Name"
+                placeholder="Tu Nombre"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="mt-1"
@@ -71,11 +71,11 @@ export default function LoginPage() {
             </div>
             <Button type="submit" className="w-full text-lg py-6" size="lg">
               <GoogleIcon />
-              Sign in with Google (Simulated)
+              Iniciar sesión con Google (Simulado)
             </Button>
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            By signing in, you agree to our Terms of Service.
+            Al iniciar sesión, aceptas nuestros Términos de Servicio.
           </p>
         </CardContent>
       </Card>

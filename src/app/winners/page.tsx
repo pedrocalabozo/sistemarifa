@@ -1,37 +1,37 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Winner } from "@/types";
-import { Crown, CalendarDays, TicketIcon, UserCircle, Gift } from "lucide-react"; // Assuming TicketIcon for winning number
+import { Crown, CalendarDays, TicketIcon, UserCircle, Gift } from "lucide-react"; 
 import Image from "next/image";
 
 const mockWinners: Winner[] = [
   {
     id: 'w1',
-    raffleId: '4', // Corresponds to "Home Makeover Package" which is 'ended'
-    raffleTitle: 'Home Makeover Package',
+    raffleId: '4', 
+    raffleTitle: 'Paquete Remodelación Hogar',
     userId: 'user123',
     userName: 'Maria G.',
     winningNumber: 345,
-    prize: '$5000 Home Renovation Voucher',
+    prize: 'Voucher de Remodelación de Hogar de $5000',
     drawDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'w2',
     raffleId: 'prev-raffle-2',
-    raffleTitle: 'Previous Electronics Bonanza',
+    raffleTitle: 'Bonanza Electrónica Anterior',
     userId: 'user456',
     userName: 'Carlos R.',
     winningNumber: 78,
-    prize: 'Latest Gaming Console',
+    prize: 'Última Consola de Videojuegos',
     drawDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'w3',
     raffleId: 'prev-raffle-3',
-    raffleTitle: 'Luxury Watch Draw',
+    raffleTitle: 'Sorteo Reloj de Lujo',
     userId: 'user789',
     userName: 'Ana S.',
     winningNumber: 812,
-    prize: 'Designer Swiss Watch',
+    prize: 'Reloj Suizo de Diseñador',
     drawDate: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];
@@ -41,9 +41,9 @@ export default function WinnersPage() {
     <div className="space-y-8">
       <div className="text-center mb-12">
         <Crown className="mx-auto h-16 w-16 text-primary mb-4" />
-        <h1 className="text-4xl font-bold">Our Lucky Winners!</h1>
+        <h1 className="text-4xl font-bold">¡Nuestros Afortunados Ganadores!</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Congratulations to all participants and especially to our winners.
+          Felicitaciones a todos los participantes y especialmente a nuestros ganadores.
         </p>
       </div>
 
@@ -54,32 +54,32 @@ export default function WinnersPage() {
               <div className="sm:w-1/3 p-4 flex justify-center">
                 <Image 
                   src={`https://placehold.co/150x150.png`} 
-                  alt="Winner Trophy" 
+                  alt="Trofeo Ganador" 
                   width={150} 
                   height={150} 
                   className="rounded-lg object-cover"
-                  data-ai-hint="trophy gold" 
+                  data-ai-hint="trofeo oro" 
                 />
               </div>
               <div className="sm:w-2/3 w-full">
                 <CardHeader>
                   <CardTitle className="text-2xl">{winner.raffleTitle}</CardTitle>
                   <CardDescription>
-                    Drawn on: {new Date(winner.drawDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    Sorteado el: {new Date(winner.drawDate).toLocaleDateString('es-LA', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex items-center">
                     <UserCircle className="h-5 w-5 mr-2 text-primary" />
-                    <span className="font-semibold">Winner:</span> {winner.userName}
+                    <span className="font-semibold">Ganador:</span> {winner.userName}
                   </div>
                   <div className="flex items-center">
                     <TicketIcon className="h-5 w-5 mr-2 text-primary" />
-                    <span className="font-semibold">Winning Number:</span> {winner.winningNumber}
+                    <span className="font-semibold">Número Ganador:</span> {winner.winningNumber}
                   </div>
                    <div className="flex items-center">
                     <Gift className="h-5 w-5 mr-2 text-primary" />
-                    <span className="font-semibold">Prize:</span> {winner.prize}
+                    <span className="font-semibold">Premio:</span> {winner.prize}
                   </div>
                 </CardContent>
               </div>
@@ -88,7 +88,7 @@ export default function WinnersPage() {
         </div>
       ) : (
         <p className="text-center text-muted-foreground text-xl py-8">
-          No winners to display at the moment. Check back after the next draw!
+          No hay ganadores para mostrar en este momento. ¡Vuelve después del próximo sorteo!
         </p>
       )}
     </div>

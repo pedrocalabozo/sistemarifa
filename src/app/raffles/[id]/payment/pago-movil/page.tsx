@@ -26,15 +26,14 @@ export default function PagoMovilPage() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Mock submission
-    console.log("Pago Movil Data:", formData);
+    // Simulación de envío
+    console.log("Datos de Pago Móvil:", formData);
     toast({
-      title: "Payment Submitted (Simulated)",
-      description: "Your Pago Móvil payment information has been received. We will verify it shortly.",
+      title: "Pago Enviado (Simulado)",
+      description: "La información de tu pago móvil ha sido recibida. La verificaremos en breve.",
     });
-    // Clear session storage for purchase
     sessionStorage.removeItem('rafflePurchaseInfo');
-    router.push('/profile?tab=activity'); // Redirect to profile activity
+    router.push('/profile?tab=activity'); 
   };
 
   return (
@@ -49,44 +48,44 @@ export default function PagoMovilPage() {
             <CardTitle className="text-3xl">Pago Móvil</CardTitle>
           </div>
           <CardDescription>
-            Please make the payment to the following details and then submit your payment reference.
+            Por favor, realiza el pago a los siguientes datos y luego envía tu referencia de pago.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="p-4 bg-muted rounded-lg space-y-2 shadow-inner">
-            <p className="font-semibold text-lg text-primary">Payment Details:</p>
-            <p><span className="font-medium">Bank:</span> Banco Ejemplo (01XX)</p>
-            <p><span className="font-medium">Phone Number:</span> 0412-1234567</p>
-            <p><span className="font-medium">ID Number (RIF/CI):</span> J-12345678-9</p>
-            <p><span className="font-medium">Concept:</span> RifaFacil Purchase</p>
+            <p className="font-semibold text-lg text-primary">Datos de Pago:</p>
+            <p><span className="font-medium">Banco:</span> Banco Ejemplo (01XX)</p>
+            <p><span className="font-medium">Número de Teléfono:</span> 0412-1234567</p>
+            <p><span className="font-medium">N° ID (RIF/CI):</span> J-12345678-9</p>
+            <p><span className="font-medium">Concepto:</span> Compra RifaFacil</p>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="phoneNumber">Your Phone Number (Sender)</Label>
+              <Label htmlFor="phoneNumber">Tu Número de Teléfono (Emisor)</Label>
               <Input id="phoneNumber" name="phoneNumber" type="tel" placeholder="04XX-XXXXXXX" value={formData.phoneNumber} onChange={handleChange} required />
             </div>
             <div>
-              <Label htmlFor="bankCode">Your Bank Code (Sender)</Label>
-              <Input id="bankCode" name="bankCode" placeholder="e.g., 0102" value={formData.bankCode} onChange={handleChange} required />
+              <Label htmlFor="bankCode">Código de Tu Banco (Emisor)</Label>
+              <Input id="bankCode" name="bankCode" placeholder="Ej: 0102" value={formData.bankCode} onChange={handleChange} required />
             </div>
              <div>
-              <Label htmlFor="idNumber">Your ID Number (Sender)</Label>
+              <Label htmlFor="idNumber">Tu Número de ID (Emisor)</Label>
               <Input id="idNumber" name="idNumber" placeholder="V-XXXXXXXX" value={formData.idNumber} onChange={handleChange} required />
             </div>
             <div>
-              <Label htmlFor="referenceNumber">Payment Reference Number</Label>
+              <Label htmlFor="referenceNumber">Número de Referencia del Pago</Label>
               <Input id="referenceNumber" name="referenceNumber" placeholder="00000000" value={formData.referenceNumber} onChange={handleChange} required />
             </div>
             <Button type="submit" className="w-full text-lg py-6" size="lg">
               <Send className="mr-2 h-5 w-5" />
-              Submit Payment Proof
+              Enviar Comprobante de Pago
             </Button>
           </form>
            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700 flex items-start">
             <Info className="h-5 w-5 mr-2 shrink-0 mt-0.5" />
             <span>
-              After submitting, your participation will be confirmed once the payment is verified. This may take a few hours.
+              Después de enviar, tu participación será confirmada una vez que el pago sea verificado. Esto puede tomar algunas horas.
             </span>
           </div>
         </CardContent>

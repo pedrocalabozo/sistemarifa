@@ -14,7 +14,6 @@ import type { PurchasedTicket } from '@/types';
 import Image from 'next/image';
 import Link from 'next/link';
 
-// Extended UserProfile for form state
 interface UserProfileFormData {
   name: string;
   lastName: string;
@@ -22,12 +21,11 @@ interface UserProfileFormData {
   idNumber: string;
 }
 
-// Mock purchased tickets data
 const mockUserActivity: PurchasedTicket[] = [
   {
     id: 'ticket1',
     raffleId: '1',
-    raffleTitle: 'Grand Holiday Raffle',
+    raffleTitle: 'Gran Rifa Navideña',
     numbers: [101, 234, 567],
     purchaseDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     totalAmount: 30,
@@ -37,7 +35,7 @@ const mockUserActivity: PurchasedTicket[] = [
   {
     id: 'ticket2',
     raffleId: '2',
-    raffleTitle: 'Tech Gadget Bundle',
+    raffleTitle: 'Combo Tecnológico',
     numbers: [45, 123, 300, 450, 488],
     purchaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     totalAmount: 25,
@@ -47,12 +45,12 @@ const mockUserActivity: PurchasedTicket[] = [
    {
     id: 'ticket3',
     raffleId: '4',
-    raffleTitle: 'Home Makeover Package',
+    raffleTitle: 'Paquete Remodelación Hogar',
     numbers: [88, 721],
     purchaseDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     totalAmount: 30,
     paymentMethod: 'Zinli',
-    status: 'paid', // Example of a past, paid ticket
+    status: 'paid',
   },
 ];
 
@@ -74,7 +72,7 @@ export default function ProfilePage() {
     name: '', lastName: '', phone: '', idNumber: ''
   });
   const [isEditing, setIsEditing] = useState(false);
-  const [userActivity] = useState<PurchasedTicket[]>(mockUserActivity); // Using mock data
+  const [userActivity] = useState<PurchasedTicket[]>(mockUserActivity);
 
   const defaultTab = searchParams.get('tab') || 'info';
 
@@ -101,13 +99,19 @@ export default function ProfilePage() {
     e.preventDefault();
     updateProfile(formData);
     setIsEditing(false);
-    toast({ title: "Profile Updated", description: "Your information has been successfully updated." });
+    toast({ title: "Perfil Actualizado", description: "Tu información ha sido actualizada exitosamente." });
+  };
+  
+  const statusMap = {
+    paid: 'Pagado',
+    pending: 'Pendiente',
+    cancelled: 'Cancelado'
   };
 
   if (isLoading || !user) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
-        <p>Loading profile...</p>
+        <p>Cargando perfil...</p>
       </div>
     );
   }
@@ -117,62 +121,62 @@ export default function ProfilePage() {
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="flex items-center">
           <User className="h-10 w-10 mr-3 text-primary" />
-          <h1 className="text-4xl font-bold">My Profile</h1>
+          <h1 className="text-4xl font-bold">Mi Perfil</h1>
         </div>
         {!isEditing && (
           <Button onClick={() => setIsEditing(true)} variant="outline">
-            <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
+            <Edit3 className="mr-2 h-4 w-4" /> Editar Perfil
           </Button>
         )}
       </div>
 
       <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="info">Personal Information</TabsTrigger>
-          <TabsTrigger value="activity">My Activity</TabsTrigger>
+          <TabsTrigger value="info">Información Personal</TabsTrigger>
+          <TabsTrigger value="activity">Mi Actividad</TabsTrigger>
         </TabsList>
         
         <TabsContent value="info">
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="text-2xl">Account Details</CardTitle>
-              <CardDescription>View and manage your personal information.</CardDescription>
+              <CardTitle className="text-2xl">Detalles de la Cuenta</CardTitle>
+              <CardDescription>Ve y gestiona tu información personal.</CardDescription>
             </CardHeader>
             <CardContent>
               {isEditing ? (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">Nombre</Label>
                     <Input id="name" name="name" value={formData.name} onChange={handleChange} />
                   </div>
                   <div>
-                    <Label htmlFor="lastName">Last Name</Label>
+                    <Label htmlFor="lastName">Apellido</Label>
                     <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} />
                   </div>
                   <div>
-                    <Label htmlFor="phone">Phone</Label>
+                    <Label htmlFor="phone">Teléfono</Label>
                     <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} />
                   </div>
                   <div>
-                    <Label htmlFor="idNumber">ID Number (Cédula)</Label>
+                    <Label htmlFor="idNumber">Número de ID (Cédula)</Label>
                     <Input id="idNumber" name="idNumber" value={formData.idNumber} onChange={handleChange} />
                   </div>
                   <div className="flex space-x-4">
                     <Button type="submit" size="lg">
-                      <Save className="mr-2 h-4 w-4" /> Save Changes
+                      <Save className="mr-2 h-4 w-4" /> Guardar Cambios
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => { setIsEditing(false); /* Reset form if needed */ }} size="lg">
-                      Cancel
+                    <Button type="button" variant="outline" onClick={() => { setIsEditing(false); /* Resetea el formulario si es necesario */ }} size="lg">
+                      Cancelar
                     </Button>
                   </div>
                 </form>
               ) : (
                 <div className="space-y-4 text-lg">
-                  <p><strong>Email:</strong> {user.email}</p>
-                  <p><strong>Name:</strong> {user.name || 'Not set'}</p>
-                  <p><strong>Last Name:</strong> {user.lastName || 'Not set'}</p>
-                  <p><strong>Phone:</strong> {user.phone || 'Not set'}</p>
-                  <p><strong>ID Number:</strong> {user.idNumber || 'Not set'}</p>
+                  <p><strong>Correo electrónico:</strong> {user.email}</p>
+                  <p><strong>Nombre:</strong> {user.name || 'No establecido'}</p>
+                  <p><strong>Apellido:</strong> {user.lastName || 'No establecido'}</p>
+                  <p><strong>Teléfono:</strong> {user.phone || 'No establecido'}</p>
+                  <p><strong>Número de ID:</strong> {user.idNumber || 'No establecido'}</p>
                 </div>
               )}
             </CardContent>
@@ -182,8 +186,8 @@ export default function ProfilePage() {
         <TabsContent value="activity">
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="text-2xl">Raffle Activity</CardTitle>
-              <CardDescription>View your history of purchased tickets and participation.</CardDescription>
+              <CardTitle className="text-2xl">Actividad de Rifas</CardTitle>
+              <CardDescription>Ve tu historial de boletos comprados y participación.</CardDescription>
             </CardHeader>
             <CardContent>
               {userActivity.length > 0 ? (
@@ -194,25 +198,25 @@ export default function ProfilePage() {
                         <CardTitle className="text-xl flex justify-between items-center">
                           <span>{ticket.raffleTitle}</span>
                            <Link href={`/raffles/${ticket.raffleId}`}>
-                            <Button variant="link" size="sm">View Raffle</Button>
+                            <Button variant="link" size="sm">Ver Rifa</Button>
                           </Link>
                         </CardTitle>
                          <CardDescription>
-                          Purchased: {new Date(ticket.purchaseDate).toLocaleDateString()}
+                          Comprado: {new Date(ticket.purchaseDate).toLocaleDateString('es-LA')}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-2">
                         <p className="flex items-center">
                           <ListCollapse className="h-5 w-5 mr-2 text-primary" /> 
-                          Numbers: {ticket.numbers.join(', ')}
+                          Números: {ticket.numbers.join(', ')}
                         </p>
                         <p className="flex items-center">
                           <PaymentIcon method={ticket.paymentMethod} />
-                          <span className="ml-2">Payment: ${ticket.totalAmount.toFixed(2)} via {ticket.paymentMethod}</span>
+                          <span className="ml-2">Pago: ${ticket.totalAmount.toFixed(2)} vía {ticket.paymentMethod}</span>
                         </p>
                         <p className="flex items-center">
                            <ShieldCheck className={`h-5 w-5 mr-2 ${ticket.status === 'paid' ? 'text-green-500' : ticket.status === 'pending' ? 'text-yellow-500' : 'text-red-500'}`} /> 
-                           Status: <span className={`font-semibold ml-1 capitalize ${ticket.status === 'paid' ? 'text-green-600' : ticket.status === 'pending' ? 'text-yellow-600' : 'text-red-600'}`}>{ticket.status}</span>
+                           Estado: <span className={`font-semibold ml-1 capitalize ${ticket.status === 'paid' ? 'text-green-600' : ticket.status === 'pending' ? 'text-yellow-600' : 'text-red-600'}`}>{statusMap[ticket.status]}</span>
                         </p>
                       </CardContent>
                     </Card>
@@ -220,10 +224,10 @@ export default function ProfilePage() {
                 </div>
               ) : (
                  <div className="text-center py-10">
-                    <Image src="https://placehold.co/200x150.png" alt="No activity" width={200} height={150} className="mx-auto mb-4 rounded-md" data-ai-hint="empty box illustration" />
-                    <p className="text-muted-foreground text-xl">You haven't participated in any raffles yet.</p>
+                    <Image src="https://placehold.co/200x150.png" alt="Sin actividad" width={200} height={150} className="mx-auto mb-4 rounded-md" data-ai-hint="caja vacia ilustracion" />
+                    <p className="text-muted-foreground text-xl">Aún no has participado en ninguna rifa.</p>
                     <Button asChild className="mt-4">
-                      <Link href="/raffles">Explore Raffles</Link>
+                      <Link href="/raffles">Explorar Rifas</Link>
                     </Button>
                   </div>
               )}

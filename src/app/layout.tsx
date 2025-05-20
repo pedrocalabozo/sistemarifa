@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'RifaFacil - Your Online Raffle Platform',
-  description: 'Participate in exciting raffles and win big prizes with RifaFacil!',
+  title: 'RifaFacil - Tu Plataforma de Rifas Online',
+  description: '¡Participa en rifas emocionantes y gana grandes premios con RifaFacil!',
 };
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es-LA">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
         <AuthProvider>
           <Header />

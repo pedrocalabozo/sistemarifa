@@ -17,7 +17,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: UserProfile | null;
   isLoading: boolean;
-  login: (email: string, name?: string) // Simulate Google Auth returning email and possibly name
+  login: (email: string, name?: string) 
     => void;
   logout: () => void;
   updateProfile: (profileData: Omit<UserProfile, 'id' | 'email'>) => void;
@@ -34,7 +34,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Simulate checking auth status on mount
     const storedUser = localStorage.getItem('rifaUser');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
@@ -45,8 +44,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && !isProfileComplete(user) && pathname !== '/register') {
-      router.push('/register');
+    if (!isLoading && isAuthenticated && !isProfileComplete(user) && pathname !== '/register' && pathname !== '/login') {
+        // Allow staying on /login if they somehow landed there while authenticated but incomplete
+        router.push('/register');
     }
   }, [isAuthenticated, user, isLoading, router, pathname]);
 
@@ -55,7 +55,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = (email: string, nameFromGoogle?: string) => {
-    // Simulate login
     const existingUser = localStorage.getItem('rifaUser');
     if (existingUser) {
         const parsedUser = JSON.parse(existingUser);
@@ -65,14 +64,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (!isProfileComplete(parsedUser)) {
                 router.push('/register');
             } else {
-                router.push('/raffles');
+                const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/raffles';
+                router.push(redirectPath);
             }
             return;
         }
     }
 
     const newUser: UserProfile = {
-      id: Date.now().toString(), // Mock ID
+      id: Date.now().toString(), 
       email,
       name: nameFromGoogle || '',
       lastName: '',
@@ -82,10 +82,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(newUser);
     setIsAuthenticated(true);
     localStorage.setItem('rifaUser', JSON.stringify(newUser));
+
+    const redirectPath = new URLSearchParams(window.location.search).get('redirect');
     if (!isProfileComplete(newUser)) {
-      router.push('/register');
+      router.push(redirectPath ? `/register?redirect=${redirectPath}` : '/register');
     } else {
-      router.push('/raffles');
+      router.push(redirectPath || '/raffles');
     }
   };
 
@@ -102,7 +104,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(updatedUser);
       localStorage.setItem('rifaUser', JSON.stringify(updatedUser));
       if(isProfileComplete(updatedUser)) {
-        router.push('/profile');
+        const redirectPath = new URLSearchParams(window.location.search).get('redirect');
+        router.push(redirectPath || '/profile');
       }
     }
   };
@@ -117,7 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth debe usarse dentro de un AuthProvider');
   }
   return context;
 };

@@ -10,7 +10,7 @@ import PaymentSummary from "@/components/payment/PaymentSummary";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const zinliUsername = "@RifaFacilZ"; // Example Zinli username
+const zinliUsername = "@RifaFacilZ"; // Nombre de usuario Zinli de ejemplo
 
 export default function ZinliPage() {
   const { toast } = useToast();
@@ -21,19 +21,19 @@ export default function ZinliPage() {
 
   const handleCopyUsername = () => {
     navigator.clipboard.writeText(zinliUsername);
-    toast({ title: "Username Copied!", description: "Zinli username copied to clipboard." });
+    toast({ title: "¡Usuario Copiado!", description: "Usuario de Zinli copiado al portapapeles." });
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!senderUsername || !reference) {
-      toast({ title: "Missing Information", description: "Please fill all fields.", variant: "destructive" });
+      toast({ title: "Información Faltante", description: "Por favor, completa todos los campos.", variant: "destructive" });
       return;
     }
-    console.log("Zinli Data:", {senderUsername, reference});
+    console.log("Datos de Zinli:", {senderUsername, reference});
     toast({
-      title: "Payment Submitted (Simulated)",
-      description: "Your Zinli payment information has been received. We will verify it shortly.",
+      title: "Pago Enviado (Simulado)",
+      description: "La información de tu pago con Zinli ha sido recibida. La verificaremos en breve.",
     });
     sessionStorage.removeItem('rafflePurchaseInfo');
     router.push('/profile?tab=activity');
@@ -48,55 +48,55 @@ export default function ZinliPage() {
         <CardHeader>
           <div className="flex items-center mb-2">
             <TrendingUp className="h-8 w-8 mr-3 text-primary" />
-            <CardTitle className="text-3xl">Zinli Payment</CardTitle>
+            <CardTitle className="text-3xl">Pago con Zinli</CardTitle>
           </div>
           <CardDescription>
-            Send the payment to our Zinli account and submit your sender username and reference.
+            Envía el pago a nuestra cuenta de Zinli y envía tu nombre de usuario emisor y referencia.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="p-4 bg-muted rounded-lg space-y-2 shadow-inner">
-            <p className="font-semibold text-lg text-primary">Zinli Payment Details:</p>
+            <p className="font-semibold text-lg text-primary">Datos de Pago Zinli:</p>
             <div className="flex items-center space-x-2">
                 <p className="text-lg font-mono bg-background p-2 rounded break-all flex-grow">{zinliUsername}</p>
-                <Button variant="outline" size="icon" onClick={handleCopyUsername} aria-label="Copy Zinli Username">
+                <Button variant="outline" size="icon" onClick={handleCopyUsername} aria-label="Copiar Usuario Zinli">
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-            <p><span className="font-medium">Note:</span> Include your RifaFacil username or raffle ID in the payment description if possible.</p>
+            <p><span className="font-medium">Nota:</span> Incluye tu nombre de usuario de RifaFacil o ID de la rifa en la descripción del pago si es posible.</p>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="senderUsername">Your Zinli Username (Sender)</Label>
+              <Label htmlFor="senderUsername">Tu Usuario de Zinli (Emisor)</Label>
               <Input 
                 id="senderUsername" 
                 name="senderUsername" 
-                placeholder="@YourZinliUser" 
+                placeholder="@TuUsuarioZinli" 
                 value={senderUsername} 
                 onChange={(e) => setSenderUsername(e.target.value)} 
                 required 
               />
             </div>
              <div>
-              <Label htmlFor="reference">Payment Reference / Screenshot Link (Optional)</Label>
+              <Label htmlFor="reference">Referencia de Pago / Enlace de Captura (Opcional)</Label>
               <Input 
                 id="reference" 
                 name="reference" 
-                placeholder="Optional: Transaction ID or Screenshot URL" 
+                placeholder="Opcional: ID de transacción o URL de captura" 
                 value={reference} 
                 onChange={(e) => setReference(e.target.value)} 
               />
             </div>
             <Button type="submit" className="w-full text-lg py-6" size="lg">
               <Send className="mr-2 h-5 w-5" />
-              Confirm Payment Sent
+              Confirmar Envío de Pago
             </Button>
           </form>
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700 flex items-start">
             <Info className="h-5 w-5 mr-2 shrink-0 mt-0.5" />
             <span>
-              Ensure your Zinli username is correct for faster verification. Your participation will be confirmed once payment is verified.
+              Asegúrate de que tu usuario de Zinli sea correcto para una verificación más rápida. Tu participación será confirmada una vez verificado el pago.
             </span>
           </div>
         </CardContent>
