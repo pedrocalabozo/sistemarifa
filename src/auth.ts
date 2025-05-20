@@ -2,18 +2,19 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-const googleClientId = process.env.AUTH_GOOGLE_ID;
-const googleClientSecret = process.env.AUTH_GOOGLE_SECRET;
+// Ensure these environment variables are set in your .env.local file
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const authSecret = process.env.AUTH_SECRET;
 
 if (!googleClientId) {
   throw new Error(
-    "Missing Google OAuth Client ID. Check AUTH_GOOGLE_ID environment variable in your .env.local file."
+    "Missing Google Client ID. Check GOOGLE_CLIENT_ID environment variable in your .env.local file."
   );
 }
 if (!googleClientSecret) {
   throw new Error(
-    "Missing Google OAuth Client Secret. Check AUTH_GOOGLE_SECRET environment variable in your .env.local file."
+    "Missing Google Client Secret. Check GOOGLE_CLIENT_SECRET environment variable in your .env.local file."
   );
 }
 if (!authSecret) {
@@ -36,8 +37,14 @@ export const {
   ],
   secret: authSecret,
   debug: process.env.NODE_ENV === 'development',
-  // pages: {
-  //   signIn: '/login', // Opcional: si quieres una página de inicio de sesión personalizada
-  //   error: '/auth/error', // Opcional: si quieres una página de error de autenticación personalizada
-  // }
+  events: {
+    async error(message) {
+      console.error("[NEXTAUTH_ERROR_EVENT]", message);
+    }
+  },
+  pages: {
+    signIn: '/login', // Optional: If you have a custom sign-in page
+    error: '/api/auth/error', // Optional: Default NextAuth error page, or your custom one
+  }
 });
+
