@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -30,7 +31,7 @@ const mockUserActivity: PurchasedTicket[] = [
     purchaseDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     totalAmount: 30,
     paymentMethod: 'Pago Movil',
-    status: 'paid',
+    status: 'pagado',
   },
   {
     id: 'ticket2',
@@ -40,7 +41,7 @@ const mockUserActivity: PurchasedTicket[] = [
     purchaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     totalAmount: 25,
     paymentMethod: 'Cripto Moneda',
-    status: 'pending',
+    status: 'pendiente',
   },
    {
     id: 'ticket3',
@@ -50,7 +51,7 @@ const mockUserActivity: PurchasedTicket[] = [
     purchaseDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     totalAmount: 30,
     paymentMethod: 'Zinli',
-    status: 'paid',
+    status: 'pagado',
   },
 ];
 
@@ -63,7 +64,7 @@ const PaymentIcon = ({ method }: { method: PurchasedTicket['paymentMethod'] }) =
 
 
 export default function ProfilePage() {
-  const { user, updateProfile, isAuthenticated, isLoading } = useAuth();
+  const { user, updateProfile, isAuthenticated, isLoading, isProfileComplete } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -79,17 +80,22 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push('/login?redirect=/profile'); // Redirigir a login si no está autenticado
+      return;
+    }
+    if (!isLoading && isAuthenticated && !isProfileComplete()) {
+      router.push('/register?redirect=/profile'); // Redirigir a completar perfil si es necesario
+      return;
     }
     if (user) {
       setFormData({
-        name: user.name,
-        lastName: user.lastName,
-        phone: user.phone,
-        idNumber: user.idNumber,
+        name: user.name || '', // El nombre puede venir de Google o de localStorage
+        lastName: user.lastName || '',
+        phone: user.phone || '',
+        idNumber: user.idNumber || '',
       });
     }
-  }, [user, isAuthenticated, isLoading, router]);
+  }, [user, isAuthenticated, isLoading, router, isProfileComplete]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -102,10 +108,12 @@ export default function ProfilePage() {
     toast({ title: "Perfil Actualizado", description: "Tu información ha sido actualizada exitosamente." });
   };
   
-  const statusMap = {
-    paid: 'Pagado',
-    pending: 'Pendiente',
-    cancelled: 'Cancelado'
+  const statusMap: Record<PurchasedTicket['status'], string> = {
+    pagado: 'Pagado',
+    pendiente: 'Pendiente',
+    fallido: 'Fallido',
+    verificando: 'Verificando',
+    cancelado: 'Cancelado'
   };
 
   if (isLoading || !user) {
@@ -165,7 +173,7 @@ export default function ProfilePage() {
                     <Button type="submit" size="lg">
                       <Save className="mr-2 h-4 w-4" /> Guardar Cambios
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => { setIsEditing(false); /* Resetea el formulario si es necesario */ }} size="lg">
+                    <Button type="button" variant="outline" onClick={() => { setIsEditing(false); if(user) setFormData({name: user.name || '', lastName: user.lastName||'', phone: user.phone||'', idNumber:user.idNumber||''}) }} size="lg">
                       Cancelar
                     </Button>
                   </div>
@@ -215,8 +223,8 @@ export default function ProfilePage() {
                           <span className="ml-2">Pago: ${ticket.totalAmount.toFixed(2)} vía {ticket.paymentMethod}</span>
                         </p>
                         <p className="flex items-center">
-                           <ShieldCheck className={`h-5 w-5 mr-2 ${ticket.status === 'paid' ? 'text-green-500' : ticket.status === 'pending' ? 'text-yellow-500' : 'text-red-500'}`} /> 
-                           Estado: <span className={`font-semibold ml-1 capitalize ${ticket.status === 'paid' ? 'text-green-600' : ticket.status === 'pending' ? 'text-yellow-600' : 'text-red-600'}`}>{statusMap[ticket.status]}</span>
+                           <ShieldCheck className={`h-5 w-5 mr-2 ${ticket.status === 'pagado' ? 'text-green-500' : ticket.status === 'pendiente' ? 'text-yellow-500' : 'text-red-500'}`} /> 
+                           Estado: <span className={`font-semibold ml-1 capitalize ${ticket.status === 'pagado' ? 'text-green-600' : ticket.status === 'pendiente' ? 'text-yellow-600' : 'text-red-600'}`}>{statusMap[ticket.status]}</span>
                         </p>
                       </CardContent>
                     </Card>

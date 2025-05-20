@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -56,7 +57,11 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={`https://placehold.co/40x40.png?text=${getInitials(user.name, user.lastName)}`} alt={user.name || 'Usuario'} data-ai-hint="avatar perfil" />
+                    {user.image ? (
+                       <AvatarImage src={user.image} alt={user.name || 'Usuario'} />
+                    ) : (
+                       <AvatarImage src={`https://placehold.co/40x40.png?text=${getInitials(user.name, user.lastName)}`} alt={user.name || 'Usuario'} data-ai-hint="avatar perfil" />
+                    )}
                     <AvatarFallback>{getInitials(user.name, user.lastName)}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -75,7 +80,7 @@ export default function Header() {
                   <User className="mr-2 h-4 w-4" />
                   <span>Perfil</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={logout}>
+                <DropdownMenuItem onClick={() => logout()}>
                   <LogIn className="mr-2 h-4 w-4" />
                   <span>Cerrar Sesión</span>
                 </DropdownMenuItem>

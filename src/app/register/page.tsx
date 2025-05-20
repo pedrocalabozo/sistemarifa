@@ -1,11 +1,12 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth, type UserProfile } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, type FormEvent } from "react";
 import { UserPlus, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function RegisterPage() {
   const { user, updateProfile, isAuthenticated, isLoading, isProfileComplete } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -24,20 +26,25 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push('/login'); // Si no está autenticado, no debería estar aquí
+      return;
     }
-    if (!isLoading && isAuthenticated && isProfileComplete) {
-        router.push('/profile'); 
+
+    if (!isLoading && isAuthenticated && isProfileComplete()) {
+        const redirectPath = searchParams.get('redirect') || '/profile';
+        router.push(redirectPath); 
+        return;
     }
+    
     if (user) {
       setFormData({
-        name: user.name || '',
+        name: user.name || '', // El nombre puede venir de Google
         lastName: user.lastName || '',
         phone: user.phone || '',
         idNumber: user.idNumber || '',
       });
     }
-  }, [user, isAuthenticated, isLoading, isProfileComplete, router]);
+  }, [user, isAuthenticated, isLoading, isProfileComplete, router, searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -48,19 +55,26 @@ export default function RegisterPage() {
     if (!formData.name || !formData.lastName || !formData.phone || !formData.idNumber) {
       toast({
         title: "Información Faltante",
-        description: "Por favor, completa todos los campos.",
+        description: "Por favor, completa todos los campos requeridos.",
         variant: "destructive",
       });
       return;
     }
-    updateProfile(formData);
+    updateProfile({
+        name: formData.name,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        idNumber: formData.idNumber
+    }); // updateProfile ya maneja la redirección
+    
     toast({
       title: "Perfil Actualizado",
       description: "Tu información ha sido guardada exitosamente.",
     });
   };
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading || (!isAuthenticated && !isLoading)) {
+    // Si está cargando O si no está autenticado y ya no está cargando (debería ser redirigido por el primer useEffect)
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p>Cargando...</p>
@@ -74,7 +88,10 @@ export default function RegisterPage() {
         <CardHeader className="text-center">
           <UserPlus className="mx-auto h-12 w-12 text-primary mb-2" />
           <CardTitle className="text-3xl font-bold">Completa Tu Perfil</CardTitle>
-          <CardDescription>Por favor, proporciona tus datos para continuar usando RifaFacil.</CardDescription>
+          <CardDescription>
+            {user?.email && <p className="mb-2">Correo: {user.email}</p>}
+            Por favor, proporciona los datos restantes para continuar usando RifaFacil.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">

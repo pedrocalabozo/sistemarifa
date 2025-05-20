@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -68,7 +69,7 @@ export default function RafflePage() {
       }
     }
     loadRaffleDetails();
-  }, [raffleId, router, toast]); // Removed numTickets, add it back if initial price calc logic changes significantly.
+  }, [raffleId, router, toast]); 
 
   useEffect(() => {
      if (raffle && numTickets > 0) {
@@ -80,10 +81,13 @@ export default function RafflePage() {
 
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    // No redirigir si authLoading es true
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
       toast({ title: "Autenticación Requerida", description: "Por favor, inicia sesión para participar.", variant: "destructive"});
       router.push(`/login?redirect=/raffles/${raffleId}`);
-    } else if (!authLoading && isAuthenticated && !isProfileComplete) {
+    } else if (isAuthenticated && !isProfileComplete()) {
       toast({ title: "Perfil Incompleto", description: "Por favor, completa tu perfil para participar.", variant: "destructive"});
       router.push(`/register?redirect=/raffles/${raffleId}`);
     }
@@ -149,7 +153,7 @@ export default function RafflePage() {
     );
   }
   
-  if (!raffle) { // Should be caught by loadRaffleDetails, but as a fallback
+  if (!raffle) { 
     return (
       <div className="text-center py-10">
         <p className="text-muted-foreground text-xl">Rifa no encontrada.</p>
@@ -162,9 +166,11 @@ export default function RafflePage() {
     year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 
-  const isParticipatable = raffle.status === 'activa' && isAuthenticated && isProfileComplete;
+  const isUserReadyToParticipate = isAuthenticated && isProfileComplete();
+  const isRaffleActive = raffle.status === 'activa';
+  const canParticipate = isUserReadyToParticipate && isRaffleActive;
 
-  const statusBadgeText = {
+  const statusBadgeText: Record<Raffle['status'], string> = {
     activa: 'Activa',
     proxima: 'Próxima',
     finalizada: 'Finalizada',
@@ -183,11 +189,12 @@ export default function RafflePage() {
             <Image
               src={raffle.imageUrl}
               alt={raffle.title}
-              layout="fill"
-              objectFit="cover"
+              fill // Usar fill en lugar de layout="fill"
+              sizes="(max-width: 768px) 100vw, 50vw" // Ayuda a Next.js a elegir el tamaño correcto
+              style={{ objectFit: 'cover' }} // Usar style para objectFit
               className="transition-transform duration-500 hover:scale-105"
               data-ai-hint={raffle.dataAiHint || "detalle premio rifa"}
-              unoptimized // Si las URLs de placehold.co no están en next.config.js images.remotePatterns
+              priority // Considerar añadir priority si esta imagen es LCP
             />
             <Badge variant={raffle.status === 'activa' ? 'default' : raffle.status === 'proxima' ? 'secondary' : 'outline'} 
                    className={`absolute top-4 left-4 text-lg px-4 py-2 shadow-lg ${raffle.status === 'activa' ? 'bg-primary text-primary-foreground' : raffle.status === 'finalizada' ? 'bg-muted text-muted-foreground' : ''}`}>
@@ -205,7 +212,7 @@ export default function RafflePage() {
               <CardDescription className="text-base leading-relaxed">{raffle.description}</CardDescription>
             </CardHeader>
             
-            {isParticipatable && (
+            {canParticipate && (
               <CardContent className="p-6 md:p-8 space-y-6 border-t">
                 <div>
                   <Label htmlFor="numTickets" className="text-lg font-medium flex items-center mb-2">
@@ -243,7 +250,7 @@ export default function RafflePage() {
               </CardContent>
             )}
 
-            {isParticipatable && generatedNumbers.length > 0 && (
+            {canParticipate && generatedNumbers.length > 0 && (
               <CardFooter className="p-6 md:p-8 border-t bg-secondary/30">
                 <div className="w-full">
                    <h3 className="text-xl font-semibold mb-4 text-center text-primary-foreground bg-primary py-2 rounded-md">Elige Método de Pago</h3>
@@ -262,7 +269,7 @@ export default function RafflePage() {
                 </div>
               </CardFooter>
             )}
-            {raffle.status !== 'activa' && (
+            {!isRaffleActive && (
                 <CardContent className="p-6 md:p-8 border-t text-center">
                     <p className="text-xl font-semibold text-muted-foreground">
                         {raffle.status === 'proxima' ? 'Esta rifa aún no está activa. ¡Vuelve pronto!' : raffle.status === 'finalizada' ? 'Esta rifa ha finalizado.' : 'Esta rifa está cancelada.'}
@@ -273,6 +280,16 @@ export default function RafflePage() {
                         </Button>
                     )}
                 </CardContent>
+            )}
+            {!authLoading && !isUserReadyToParticipate && isRaffleActive && (
+                 <CardContent className="p-6 md:p-8 border-t text-center">
+                    <p className="text-xl font-semibold text-muted-foreground">
+                        Debes iniciar sesión y completar tu perfil para participar.
+                    </p>
+                    <Button className="mt-4" asChild>
+                        <Link href={`/login?redirect=/raffles/${raffleId}`}>Iniciar Sesión</Link>
+                    </Button>
+                 </CardContent>
             )}
           </div>
         </div>

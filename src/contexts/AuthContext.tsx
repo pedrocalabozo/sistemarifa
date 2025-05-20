@@ -1,117 +1,126 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useSession, signIn, signOut } from 'next-auth/react';
+import type { User as NextAuthUser } from 'next-auth';
 
-export interface UserProfile {
-  id: string;
-  name: string;
+export interface UserProfile extends NextAuthUser {
+  id: string; // Provisto por NextAuth o generado/obtenido de tu DB
+  name: string; // Nombre completo o primer nombre de Google
   lastName: string;
   phone: string;
   idNumber: string; // Cedula
-  email: string;
+  email: string; // email de Google
+  image?: string | null; // imagen de Google
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: UserProfile | null;
   isLoading: boolean;
-  login: (email: string, name?: string) 
-    => void;
+  login: () => void; // Simplificado, usará signIn('google')
   logout: () => void;
-  updateProfile: (profileData: Omit<UserProfile, 'id' | 'email'>) => void;
-  isProfileComplete: boolean;
+  updateProfile: (profileData: Pick<UserProfile, 'name' | 'lastName' | 'phone' | 'idNumber'>) => void;
+  isProfileComplete: (userToCheck?: UserProfile | null) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  const [internalUser, setInternalUser] = useState<UserProfile | null>(null);
+
+  const isLoadingAuth = status === 'loading';
+
+  // Función para verificar si el perfil está completo
+  const checkProfileComplete = (currentUser: UserProfile | null | undefined): boolean => {
+    if (!currentUser) return false;
+    return !!(currentUser.name && currentUser.lastName && currentUser.phone && currentUser.idNumber);
+  };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('rifaUser');
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
-  }, []);
+    if (session?.user) {
+      const storedProfileData = localStorage.getItem(`rifaUser_${session.user.email}`);
+      let profileData: Partial<UserProfile> = {};
+      if (storedProfileData) {
+        profileData = JSON.parse(storedProfileData);
+      }
 
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && !isProfileComplete(user) && pathname !== '/register' && pathname !== '/login') {
-        // Allow staying on /login if they somehow landed there while authenticated but incomplete
-        router.push('/register');
-    }
-  }, [isAuthenticated, user, isLoading, router, pathname]);
+      const combinedUser: UserProfile = {
+        id: session.user.id || session.user.email!, // Usar id de session si existe, sino email como fallback
+        email: session.user.email!,
+        name: profileData.name || session.user.name || '',
+        lastName: profileData.lastName || '',
+        phone: profileData.phone || '',
+        idNumber: profileData.idNumber || '',
+        image: session.user.image,
+      };
+      setInternalUser(combinedUser);
 
-  const isProfileComplete = (currentUser: UserProfile | null): boolean => {
-    return !!(currentUser?.name && currentUser.lastName && currentUser.phone && currentUser.idNumber);
+      if (!isLoadingAuth && session?.user && !checkProfileComplete(combinedUser) && pathname !== '/register' && pathname !== '/login') {
+        const redirect = searchParams.get('redirect');
+        const redirectTo = redirect ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register';
+        router.push(redirectTo);
+      }
+    } else if (!isLoadingAuth && !session?.user) {
+      setInternalUser(null); // Limpiar usuario si no hay sesión
+    }
+  }, [session, isLoadingAuth, router, pathname, searchParams]);
+
+  const login = async () => {
+    const redirectPath = searchParams.get('redirect') || '/raffles';
+    // El callbackUrl se maneja por NextAuth para redirigir después del login.
+    // Si el perfil no está completo, el useEffect anterior se encargará de redirigir a /register.
+    await signIn('google', { callbackUrl: redirectPath });
   };
 
-  const login = (email: string, nameFromGoogle?: string) => {
-    const existingUser = localStorage.getItem('rifaUser');
-    if (existingUser) {
-        const parsedUser = JSON.parse(existingUser);
-        if(parsedUser.email === email) {
-            setUser(parsedUser);
-            setIsAuthenticated(true);
-            if (!isProfileComplete(parsedUser)) {
-                router.push('/register');
-            } else {
-                const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/raffles';
-                router.push(redirectPath);
-            }
-            return;
-        }
+  const logout = async () => {
+    if (internalUser?.email) {
+      // Opcional: podrías querer limpiar localStorage aquí o dejarlo para la próxima vez que inicie sesión.
+      // localStorage.removeItem(`rifaUser_${internalUser.email}`);
     }
-
-    const newUser: UserProfile = {
-      id: Date.now().toString(), 
-      email,
-      name: nameFromGoogle || '',
-      lastName: '',
-      phone: '',
-      idNumber: '',
-    };
-    setUser(newUser);
-    setIsAuthenticated(true);
-    localStorage.setItem('rifaUser', JSON.stringify(newUser));
-
-    const redirectPath = new URLSearchParams(window.location.search).get('redirect');
-    if (!isProfileComplete(newUser)) {
-      router.push(redirectPath ? `/register?redirect=${redirectPath}` : '/register');
-    } else {
-      router.push(redirectPath || '/raffles');
-    }
+    await signOut({ callbackUrl: '/login' });
+    setInternalUser(null);
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
-    localStorage.removeItem('rifaUser');
-    router.push('/login');
-  };
-
-  const updateProfile = (profileData: Omit<UserProfile, 'id' | 'email'>) => {
-    if (user) {
-      const updatedUser = { ...user, ...profileData };
-      setUser(updatedUser);
-      localStorage.setItem('rifaUser', JSON.stringify(updatedUser));
-      if(isProfileComplete(updatedUser)) {
-        const redirectPath = new URLSearchParams(window.location.search).get('redirect');
-        router.push(redirectPath || '/profile');
+  const updateProfile = (profileData: Pick<UserProfile, 'name' | 'lastName' | 'phone' | 'idNumber'>) => {
+    if (internalUser && internalUser.email) {
+      const updatedUser: UserProfile = {
+        ...internalUser,
+        ...profileData,
+      };
+      setInternalUser(updatedUser);
+      localStorage.setItem(`rifaUser_${internalUser.email}`, JSON.stringify({
+        name: updatedUser.name,
+        lastName: updatedUser.lastName,
+        phone: updatedUser.phone,
+        idNumber: updatedUser.idNumber,
+      }));
+      
+      if (checkProfileComplete(updatedUser)) {
+        const redirect = searchParams.get('redirect');
+        router.push(redirect || '/profile');
       }
     }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateProfile, isLoading, isProfileComplete: isProfileComplete(user) }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated: !!session?.user, 
+      user: internalUser, 
+      login, 
+      logout, 
+      updateProfile, 
+      isLoading: isLoadingAuth, 
+      isProfileComplete: () => checkProfileComplete(internalUser) 
+    }}>
       {children}
     </AuthContext.Provider>
   );

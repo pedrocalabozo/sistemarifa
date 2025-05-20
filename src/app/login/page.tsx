@@ -1,12 +1,12 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, type FormEvent } from "react";
-import { LogIn, Ticket } from "lucide-react";
+import { Ticket } from "lucide-react";
+import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // Google Icon SVG
 const GoogleIcon = () => (
@@ -19,22 +19,39 @@ const GoogleIcon = () => (
   </svg>
 );
 
-
 export default function LoginPage() {
-  const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState(''); // Opcional: para simular que Google devuelve el nombre
+  const { login, isAuthenticated, isLoading, user, isProfileComplete } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const handleGoogleLogin = (e: FormEvent) => {
-    e.preventDefault();
-    // En una aplicación real, esto iniciaría el flujo OAuth de Google.
-    // Para esta simulación, usaremos el correo electrónico ingresado.
-    if (email) {
-      login(email, name || undefined);
-    } else {
-      alert("Por favor, ingresa un correo electrónico para simular el inicio de sesión.");
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      const redirectPath = searchParams.get('redirect');
+      if (!isProfileComplete()) {
+        router.push(redirectPath ? `/register?redirect=${encodeURIComponent(redirectPath)}` : '/register');
+      } else {
+        router.push(redirectPath || '/raffles');
+      }
     }
-  };
+  }, [isLoading, isAuthenticated, user, router, searchParams, isProfileComplete]);
+
+  if (isLoading) {
+     return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <p>Verificando autenticación...</p>
+      </div>
+    );
+  }
+  
+  // Si ya está autenticado y el useEffect no ha redirigido aún, no mostrar el botón de login.
+  // Esto puede pasar brevemente mientras el useEffect procesa.
+  if (isAuthenticated) {
+     return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <p>Redirigiendo...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
@@ -45,35 +62,12 @@ export default function LoginPage() {
           <CardDescription>Inicia sesión para participar en rifas emocionantes.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleGoogleLogin} className="space-y-6">
-            <div>
-              <Label htmlFor="email">Correo electrónico (para simulación)</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="usuario@ejemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="name">Nombre (opcional, para simulación)</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Tu Nombre"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            <Button type="submit" className="w-full text-lg py-6" size="lg">
+          <div className="space-y-6">
+            <Button onClick={() => login()} className="w-full text-lg py-6" size="lg">
               <GoogleIcon />
-              Iniciar sesión con Google (Simulado)
+              Iniciar sesión con Google
             </Button>
-          </form>
+          </div>
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Al iniciar sesión, aceptas nuestros Términos de Servicio.
           </p>
