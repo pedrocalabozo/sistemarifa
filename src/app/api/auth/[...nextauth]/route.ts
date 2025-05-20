@@ -1,4 +1,17 @@
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
 
-import { handlers } from "@/auth"; // Import the handlers object
-export const { GET, POST } = handlers; // Destructure GET and POST from the handlers object
-// export const runtime = "edge"; // Optional: if you want to use Edge Functions for authentication
+
+
+const handler = NextAuth({
+    providers: [
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        }),
+
+    ],
+    secret: process.env.NEXTAUTH_SECRET,
+});
+
+export { handler as GET, handler as POST };
