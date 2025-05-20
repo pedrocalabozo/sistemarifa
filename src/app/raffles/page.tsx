@@ -1,61 +1,62 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { RaffleCard } from '@/components/raffles/RaffleCard';
 import type { Raffle } from '@/types';
 import { ListChecks } from 'lucide-react';
 
-const mockRaffles: Raffle[] = [
-  {
-    id: '1',
-    title: 'Gran Rifa Navideña',
-    shortDescription: '¡Gana un paquete de vacaciones de lujo para dos!',
-    description: 'Participa en nuestra Gran Rifa Navideña y ten la oportunidad de ganar un paquete de vacaciones de lujo todo incluido a un paraíso tropical. Incluye vuelos, alojamiento y dinero para gastos. ¡No te pierdas este viaje de ensueño!',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'vacaciones viajes',
-    pricePerTicket: 10,
-    maxNumbers: 900,
-    drawDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), 
-    status: 'active',
-  },
-  {
-    id: '2',
-    title: 'Combo Tecnológico',
-    shortDescription: 'Llévate el último smartphone, laptop y tablet.',
-    description: '¡Actualiza tu tecnología con nuestra Rifa de Combo Tecnológico! Un afortunado ganador recibirá el smartphone más nuevo, una laptop de alto rendimiento y una tablet versátil. Perfecto para trabajar, jugar y mantenerse conectado.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'dispositivos tecnologia',
-    pricePerTicket: 5,
-    maxNumbers: 500,
-    drawDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(), 
-    status: 'active',
-  },
-  {
-    id: '3',
-    title: 'Auto para Escapada de Fin de Semana',
-    shortDescription: '¡Llévate a casa un SUV compacto nuevo!',
-    description: 'Imagina conducir un SUV compacto elegante y confiable. Esta rifa te da la oportunidad de ganar un auto nuevo, perfecto para la ciudad y aventuras de fin de semana. ¡Consigue tus boletos ahora!',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'auto vehiculo',
-    pricePerTicket: 20,
-    maxNumbers: 900,
-    drawDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), 
-    status: 'upcoming',
-  },
-    {
-    id: '4',
-    title: 'Paquete Remodelación Hogar',
-    shortDescription: 'Gana $5000 para la renovación de tus sueños.',
-    description: '¡Transforma tu espacio vital con nuestra Rifa de Remodelación del Hogar! El ganador obtiene $5000 para gastar en muebles, decoración o renovaciones. Crea el hogar que siempre has querido.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'hogar interior',
-    pricePerTicket: 15,
-    maxNumbers: 900,
-    drawDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), 
-    status: 'ended',
-  },
-];
+async function fetchRaffles(): Promise<Raffle[]> {
+  const res = await fetch('/api/rifas');
+  if (!res.ok) {
+    // Esto activará el Error Boundary más cercano
+    throw new Error('Error al cargar las rifas');
+  }
+  return res.json();
+}
 
 export default function RafflesPage() {
-  const activeRaffles = mockRaffles.filter(r => r.status === 'active');
-  const upcomingRaffles = mockRaffles.filter(r => r.status === 'upcoming');
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadRaffles() {
+      try {
+        setIsLoading(true);
+        const data = await fetchRaffles();
+        setRaffles(data);
+        setError(null);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadRaffles();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Cargando rifas...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-destructive text-xl">Error: {error}</p>
+        <p className="text-muted-foreground mt-2">
+          No pudimos cargar las rifas. Por favor, inténtalo de nuevo más tarde.
+        </p>
+      </div>
+    );
+  }
+  
+  const activeRaffles = raffles.filter(r => r.status === 'activa');
+  const upcomingRaffles = raffles.filter(r => r.status === 'proxima');
 
   return (
     <div className="space-y-12">
@@ -87,6 +88,11 @@ export default function RafflesPage() {
           </div>
         </div>
       )}
+       {activeRaffles.length === 0 && upcomingRaffles.length === 0 && !isLoading && (
+         <p className="text-center text-muted-foreground text-xl py-8">
+           Actualmente no hay rifas disponibles. ¡Visítanos más tarde!
+         </p>
+       )}
     </div>
   );
 }

@@ -12,57 +12,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, CreditCard, Smartphone, TrendingUp, Ticket, DollarSign, CalendarDays, Info, HelpCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
-const mockRafflesData: Raffle[] = [
-   {
-    id: '1',
-    title: 'Gran Rifa Navideña',
-    shortDescription: '¡Gana un paquete de vacaciones de lujo para dos!',
-    description: 'Participa en nuestra Gran Rifa Navideña y ten la oportunidad de ganar un paquete de vacaciones de lujo todo incluido a un paraíso tropical. Incluye vuelos, alojamiento y dinero para gastos. ¡No te pierdas este viaje de ensueño! Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-    imageUrl: 'https://placehold.co/800x500.png',
-    dataAiHint: 'vacaciones viajes',
-    pricePerTicket: 10,
-    maxNumbers: 900,
-    drawDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'active',
-  },
-  {
-    id: '2',
-    title: 'Combo Tecnológico',
-    shortDescription: 'Llévate el último smartphone, laptop y tablet.',
-    description: '¡Actualiza tu tecnología con nuestra Rifa de Combo Tecnológico! Un afortunado ganador recibirá el smartphone más nuevo, una laptop de alto rendimiento y una tablet versátil. Perfecto para trabajar, jugar y mantenerse conectado. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-    imageUrl: 'https://placehold.co/800x500.png',
-    dataAiHint: 'dispositivos tecnologia',
-    pricePerTicket: 5,
-    maxNumbers: 500,
-    drawDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'active',
-  },
-  {
-    id: '3',
-    title: 'Auto para Escapada de Fin de Semana',
-    shortDescription: '¡Llévate a casa un SUV compacto nuevo!',
-    description: 'Imagina conducir un SUV compacto elegante y confiable. Esta rifa te da la oportunidad de ganar un auto nuevo, perfecto para la ciudad y aventuras de fin de semana. ¡Consigue tus boletos ahora! Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
-    imageUrl: 'https://placehold.co/800x500.png',
-    dataAiHint: 'auto vehiculo',
-    pricePerTicket: 20,
-    maxNumbers: 900,
-    drawDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'upcoming',
-  },
-   {
-    id: '4',
-    title: 'Paquete Remodelación Hogar',
-    shortDescription: 'Gana $5000 para la renovación de tus sueños.',
-    description: '¡Transforma tu espacio vital con nuestra Rifa de Remodelación del Hogar! El ganador obtiene $5000 para gastar en muebles, decoración o renovaciones. Crea el hogar que siempre has querido. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
-    imageUrl: 'https://placehold.co/800x500.png',
-    dataAiHint: 'hogar interior',
-    pricePerTicket: 15,
-    maxNumbers: 900,
-    drawDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'ended',
-  },
-];
+
+async function fetchRaffleById(id: string): Promise<Raffle | null> {
+  const res = await fetch(`/api/rifas/${id}`);
+  if (res.status === 404) {
+    return null;
+  }
+  if (!res.ok) {
+    throw new Error('Error al cargar los detalles de la rifa');
+  }
+  return res.json();
+}
 
 
 export default function RafflePage() {
@@ -75,23 +37,41 @@ export default function RafflePage() {
   const [numTickets, setNumTickets] = useState<number>(1);
   const [generatedNumbers, setGeneratedNumbers] = useState<number[]>([]);
   const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [isLoadingRaffle, setIsLoadingRaffle] = useState(true);
+  const [errorRaffle, setErrorRaffle] = useState<string | null>(null);
+
 
   const raffleId = typeof params.id === 'string' ? params.id : '';
 
   useEffect(() => {
-    if (raffleId) {
-      const foundRaffle = mockRafflesData.find(r => r.id === raffleId);
-      if (foundRaffle) {
-        setRaffle(foundRaffle);
-        setTotalPrice(foundRaffle.pricePerTicket * numTickets);
+    async function loadRaffleDetails() {
+      if (raffleId) {
+        try {
+          setIsLoadingRaffle(true);
+          const foundRaffle = await fetchRaffleById(raffleId);
+          if (foundRaffle) {
+            setRaffle(foundRaffle);
+            setTotalPrice(foundRaffle.pricePerTicket * numTickets); // Initial total price
+            setErrorRaffle(null);
+          } else {
+            toast({ title: "Rifa no encontrada", description: "La rifa que buscas no existe o fue eliminada.", variant: "destructive"});
+            router.push('/raffles');
+          }
+        } catch (err: any) {
+          setErrorRaffle(err.message);
+          toast({ title: "Error", description: err.message, variant: "destructive"});
+        } finally {
+          setIsLoadingRaffle(false);
+        }
       } else {
-        router.push('/raffles');
+        router.push('/raffles'); // No ID, redirect
       }
     }
-  }, [raffleId, router, numTickets]); // NOP: Removed raffle from deps, it was causing infinite loop along with setTotalPrice.
+    loadRaffleDetails();
+  }, [raffleId, router, toast]); // Removed numTickets, add it back if initial price calc logic changes significantly.
 
   useEffect(() => {
-     if (raffle && numTickets > 0) { // Update total price when raffle or numTickets changes
+     if (raffle && numTickets > 0) {
         setTotalPrice(raffle.pricePerTicket * numTickets);
     } else if (raffle && numTickets === 0) {
         setTotalPrice(0);
@@ -148,11 +128,32 @@ export default function RafflePage() {
     router.push(`/raffles/${raffleId}/payment/${method}`);
   };
 
-  if (!raffle || authLoading) {
+  if (isLoadingRaffle || authLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary mb-4"></div>
         <p className="text-muted-foreground">Cargando detalles de la rifa...</p>
+      </div>
+    );
+  }
+
+  if (errorRaffle) {
+     return (
+      <div className="text-center py-10">
+        <p className="text-destructive text-xl">Error: {errorRaffle}</p>
+        <p className="text-muted-foreground mt-2">
+          No pudimos cargar los detalles de la rifa. Por favor, inténtalo de nuevo más tarde.
+        </p>
+        <Button onClick={() => router.push('/raffles')} className="mt-4">Volver a Rifas</Button>
+      </div>
+    );
+  }
+  
+  if (!raffle) { // Should be caught by loadRaffleDetails, but as a fallback
+    return (
+      <div className="text-center py-10">
+        <p className="text-muted-foreground text-xl">Rifa no encontrada.</p>
+        <Button onClick={() => router.push('/raffles')} className="mt-4">Volver a Rifas</Button>
       </div>
     );
   }
@@ -161,12 +162,13 @@ export default function RafflePage() {
     year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 
-  const isParticipatable = raffle.status === 'active' && isAuthenticated && isProfileComplete;
+  const isParticipatable = raffle.status === 'activa' && isAuthenticated && isProfileComplete;
 
   const statusBadgeText = {
-    active: 'Activa',
-    upcoming: 'Próxima',
-    ended: 'Finalizada'
+    activa: 'Activa',
+    proxima: 'Próxima',
+    finalizada: 'Finalizada',
+    cancelada: 'Cancelada'
   };
 
   return (
@@ -185,9 +187,10 @@ export default function RafflePage() {
               objectFit="cover"
               className="transition-transform duration-500 hover:scale-105"
               data-ai-hint={raffle.dataAiHint || "detalle premio rifa"}
+              unoptimized // Si las URLs de placehold.co no están en next.config.js images.remotePatterns
             />
-            <Badge variant={raffle.status === 'active' ? 'default' : raffle.status === 'upcoming' ? 'secondary' : 'outline'} 
-                   className={`absolute top-4 left-4 text-lg px-4 py-2 shadow-lg ${raffle.status === 'active' ? 'bg-primary text-primary-foreground' : raffle.status === 'ended' ? 'bg-muted text-muted-foreground' : ''}`}>
+            <Badge variant={raffle.status === 'activa' ? 'default' : raffle.status === 'proxima' ? 'secondary' : 'outline'} 
+                   className={`absolute top-4 left-4 text-lg px-4 py-2 shadow-lg ${raffle.status === 'activa' ? 'bg-primary text-primary-foreground' : raffle.status === 'finalizada' ? 'bg-muted text-muted-foreground' : ''}`}>
               {statusBadgeText[raffle.status]}
             </Badge>
           </div>
@@ -259,12 +262,12 @@ export default function RafflePage() {
                 </div>
               </CardFooter>
             )}
-            {raffle.status !== 'active' && (
+            {raffle.status !== 'activa' && (
                 <CardContent className="p-6 md:p-8 border-t text-center">
                     <p className="text-xl font-semibold text-muted-foreground">
-                        {raffle.status === 'upcoming' ? 'Esta rifa aún no está activa. ¡Vuelve pronto!' : 'Esta rifa ha finalizado.'}
+                        {raffle.status === 'proxima' ? 'Esta rifa aún no está activa. ¡Vuelve pronto!' : raffle.status === 'finalizada' ? 'Esta rifa ha finalizado.' : 'Esta rifa está cancelada.'}
                     </p>
-                    {raffle.status === 'ended' && (
+                    {raffle.status === 'finalizada' && (
                         <Button className="mt-4" asChild>
                             <Link href="/winners">Ver Ganadores</Link>
                         </Button>
