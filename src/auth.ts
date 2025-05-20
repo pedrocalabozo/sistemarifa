@@ -1,12 +1,11 @@
-
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-export const { 
-  handlers, // This object contains GET and POST methods
-  auth, 
-  signIn, 
-  signOut 
+export const {
+  handlers, // Este objeto contiene los métodos GET y POST
+  auth,
+  signIn,
+  signOut
 } = NextAuth({
   providers: [
     GoogleProvider({
@@ -15,18 +14,9 @@ export const {
     }),
   ],
   secret: process.env.AUTH_SECRET,
-  // pages: { // Optional: if you have custom pages
-  //   signIn: '/login',
-  // }
-  // Ensure you have callbacks defined if you need to customize session/jwt
-  // callbacks: {
-  //   async session({ session, token }) {
-  //     // Add custom properties to session
-  //     return session;
-  //   },
-  //   async jwt({ token, user }) {
-  //     // Add custom properties to JWT
-  //     return token;
-  //   }
+  debug: process.env.NODE_ENV === 'development', // Habilita logs de depuración en desarrollo
+  // pages: {
+  //   signIn: '/login', // Opcional: si quieres una página de inicio de sesión personalizada
+  //   error: '/auth/error', // Opcional: si quieres una página de error de autenticación personalizada
   // }
 });
