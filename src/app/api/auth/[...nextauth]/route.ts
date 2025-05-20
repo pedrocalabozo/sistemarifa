@@ -1,7 +1,4 @@
 
-import { handlers } from "@/auth";
-
-// handlers is an object that contains the GET and POST methods
-export const { GET, POST } = handlers;
-
-// export const runtime = "edge" // Opcional: si quieres usar Edge Functions para autenticación
+import { handlers } from "@/auth"; // Import the handlers object
+export const { GET, POST } = handlers; // Destructure GET and POST from the handlers object
+// export const runtime = "edge"; // Optional: if you want to use Edge Functions for authentication
