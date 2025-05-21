@@ -81,17 +81,18 @@ export default function RafflePage() {
 
 
   useEffect(() => {
-    // No redirigir si authLoading es true
     if (authLoading) return;
 
     if (!isAuthenticated) {
       toast({ title: "Autenticación Requerida", description: "Por favor, inicia sesión para participar.", variant: "destructive"});
       router.push(`/login?redirect=/raffles/${raffleId}`);
-    } else if (isAuthenticated && !isProfileComplete()) {
-      toast({ title: "Perfil Incompleto", description: "Por favor, completa tu perfil para participar.", variant: "destructive"});
-      router.push(`/register?redirect=/raffles/${raffleId}`);
+    } else { // El usuario está autenticado
+      if (!isProfileComplete()) { // Verificar si el perfil está completo
+        toast({ title: "Perfil Incompleto", description: "Por favor, completa tu perfil para participar en esta rifa.", variant: "destructive"});
+        router.push(`/register?redirect=/raffles/${raffleId}`);
+      }
     }
-  }, [authLoading, isAuthenticated, isProfileComplete, router, raffleId, toast]);
+  }, [authLoading, isAuthenticated, user, isProfileComplete, router, raffleId, toast]);
 
 
   const handleNumTicketsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,12 +190,12 @@ export default function RafflePage() {
             <Image
               src={raffle.imageUrl}
               alt={raffle.title}
-              fill // Usar fill en lugar de layout="fill"
-              sizes="(max-width: 768px) 100vw, 50vw" // Ayuda a Next.js a elegir el tamaño correcto
-              style={{ objectFit: 'cover' }} // Usar style para objectFit
+              fill 
+              sizes="(max-width: 768px) 100vw, 50vw" 
+              style={{ objectFit: 'cover' }} 
               className="transition-transform duration-500 hover:scale-105"
               data-ai-hint={raffle.dataAiHint || "detalle premio rifa"}
-              priority // Considerar añadir priority si esta imagen es LCP
+              priority 
             />
             <Badge variant={raffle.status === 'activa' ? 'default' : raffle.status === 'proxima' ? 'secondary' : 'outline'} 
                    className={`absolute top-4 left-4 text-lg px-4 py-2 shadow-lg ${raffle.status === 'activa' ? 'bg-primary text-primary-foreground' : raffle.status === 'finalizada' ? 'bg-muted text-muted-foreground' : ''}`}>
