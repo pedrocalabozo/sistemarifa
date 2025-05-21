@@ -2,124 +2,116 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import type { User as NextAuthUser } from 'next-auth';
+import type { UserProfile as AppUserProfile } from '@/types'; // Renombrado para evitar colisión
+import { useToast } from '@/hooks/use-toast';
 
-export interface UserProfile extends NextAuthUser {
-  id: string; // Provisto por NextAuth o generado/obtenido de tu DB
-  name: string; // Nombre completo o primer nombre de Google
-  lastName: string;
-  phone: string;
-  idNumber: string; // Cedula
-  email: string; // email de Google
-  image?: string | null; // imagen de Google
-}
-
+// La interfaz UserProfile aquí debe coincidir con la que se construye en el callback de session de NextAuth
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: UserProfile | null;
+  user: AppUserProfile | null; // Usar el tipo renombrado
   isLoading: boolean;
-  login: () => void; // Simplificado, usará signIn('google')
+  login: () => void;
   logout: () => void;
-  updateProfile: (profileData: Pick<UserProfile, 'name' | 'lastName' | 'phone' | 'idNumber'>) => void;
-  isProfileComplete: (userToCheck?: UserProfile | null) => boolean;
+  updateProfile: (profileData: Pick<AppUserProfile, 'name' | 'lastName' | 'phone' | 'idNumber'>) => Promise<void>;
+  isProfileComplete: (userToCheck?: AppUserProfile | null) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  
-  const [internalUser, setInternalUser] = useState<UserProfile | null>(null);
+  const { toast } = useToast();
 
   const isLoadingAuth = status === 'loading';
+  const user = session?.user as AppUserProfile | null | undefined; // Castear a nuestro UserProfile extendido
 
-  // Función para verificar si el perfil está completo
-  const checkProfileComplete = (currentUser: UserProfile | null | undefined): boolean => {
+  const checkProfileComplete = (currentUser: AppUserProfile | null | undefined): boolean => {
     if (!currentUser) return false;
+    // El nombre, email, e imagen usualmente vienen de Google.
+    // Los campos clave para "completar perfil" son los que no vienen de Google.
     return !!(currentUser.name && currentUser.lastName && currentUser.phone && currentUser.idNumber);
   };
 
   useEffect(() => {
-    if (session?.user) {
-      const storedProfileData = localStorage.getItem(`rifaUser_${session.user.email}`);
-      let profileData: Partial<UserProfile> = {};
-      if (storedProfileData) {
-        profileData = JSON.parse(storedProfileData);
-      }
-
-      const combinedUser: UserProfile = {
-        id: session.user.id || session.user.email!, // Usar id de session si existe, sino email como fallback
-        email: session.user.email!,
-        name: profileData.name || session.user.name || '',
-        lastName: profileData.lastName || '',
-        phone: profileData.phone || '',
-        idNumber: profileData.idNumber || '',
-        image: session.user.image,
-      };
-      setInternalUser(combinedUser);
-
-      if (!isLoadingAuth && session?.user && !checkProfileComplete(combinedUser) && pathname !== '/register' && pathname !== '/login') {
+    if (!isLoadingAuth && session?.user) { // Hay una sesión activa
+      const appUser = session.user as AppUserProfile;
+      if (!checkProfileComplete(appUser) && pathname !== '/register' && pathname !== '/login') {
         const redirect = searchParams.get('redirect');
         const redirectTo = redirect ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register';
         router.push(redirectTo);
       }
-    } else if (!isLoadingAuth && !session?.user) {
-      setInternalUser(null); // Limpiar usuario si no hay sesión
     }
   }, [session, isLoadingAuth, router, pathname, searchParams]);
 
   const login = async () => {
     const redirectPath = searchParams.get('redirect') || '/raffles';
-    // El callbackUrl se maneja por NextAuth para redirigir después del login.
-    // Si el perfil no está completo, el useEffect anterior se encargará de redirigir a /register.
     await signIn('google', { callbackUrl: redirectPath });
   };
 
   const logout = async () => {
-    if (internalUser?.email) {
-      // Opcional: podrías querer limpiar localStorage aquí o dejarlo para la próxima vez que inicie sesión.
-      // localStorage.removeItem(`rifaUser_${internalUser.email}`);
-    }
     await signOut({ callbackUrl: '/login' });
-    setInternalUser(null);
   };
 
-  const updateProfile = (profileData: Pick<UserProfile, 'name' | 'lastName' | 'phone' | 'idNumber'>) => {
-    if (internalUser && internalUser.email) {
-      const updatedUser: UserProfile = {
-        ...internalUser,
-        ...profileData,
-      };
-      setInternalUser(updatedUser);
-      localStorage.setItem(`rifaUser_${internalUser.email}`, JSON.stringify({
-        name: updatedUser.name,
-        lastName: updatedUser.lastName,
-        phone: updatedUser.phone,
-        idNumber: updatedUser.idNumber,
-      }));
-      
-      if (checkProfileComplete(updatedUser)) {
-        const redirect = searchParams.get('redirect');
-        router.push(redirect || '/profile');
+  const updateProfile = async (profileData: Pick<AppUserProfile, 'name' | 'lastName' | 'phone' | 'idNumber'>) => {
+    if (!user) {
+      toast({ title: "Error", description: "No estás autenticado.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar el perfil');
       }
+      
+      // Actualizar la sesión de NextAuth para reflejar los cambios
+      await updateSession(); 
+      // `updateSession` debería recargar los datos del JWT/session del backend.
+      // Si los callbacks de `auth.ts` están bien, la sesión actualizada tendrá los nuevos datos.
+
+      toast({ title: "Perfil Actualizado", description: "Tu información ha sido actualizada exitosamente." });
+
+      // La redirección ahora se basa en el estado actualizado de la sesión post-updateSession()
+      // El useEffect se encargará de la lógica de redirección si es necesario,
+      // o podemos redirigir explícitamente aquí si se completó el perfil.
+      const updatedUser = session?.user as AppUserProfile; // Re-evaluar user de la sesión (aunque updateSession es async)
+      if (checkProfileComplete(updatedUser)) { // Verificamos con el user potencialmente actualizado
+         const redirect = searchParams.get('redirect');
+         if (pathname === '/register') { // Solo redirigir desde /register si el perfil está ahora completo
+            router.push(redirect || '/profile');
+         } else if (redirect) { // Si había un redirect pendiente y el perfil está completo
+            router.push(redirect);
+         }
+      }
+
+
+    } catch (error: any) {
+      console.error("Error al actualizar perfil:", error);
+      toast({ title: "Error al Actualizar", description: error.message || "Ocurrió un problema al guardar tus datos.", variant: "destructive" });
     }
   };
 
   return (
     <AuthContext.Provider value={{ 
       isAuthenticated: !!session?.user, 
-      user: internalUser, 
+      user: user || null, 
       login, 
       logout, 
       updateProfile, 
       isLoading: isLoadingAuth, 
-      isProfileComplete: () => checkProfileComplete(internalUser) 
+      isProfileComplete: (userToCheck?: AppUserProfile | null) => checkProfileComplete(userToCheck !== undefined ? userToCheck : user)
     }}>
       {children}
     </AuthContext.Provider>

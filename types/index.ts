@@ -1,37 +1,52 @@
+
+import type { User as NextAuthUser } from 'next-auth';
+
 export interface Raffle {
-  id: string; // Debería ser string si viene de la API como id_rifa (INT) y se convierte
+  id: string; 
   title: string;
-  description: string; // Corresponde a descripcion_larga
-  shortDescription: string; // Corresponde a descripcion_corta
-  imageUrl: string; // Corresponde a url_imagen
-  dataAiHint?: string; // Corresponde a pista_ia_imagen
-  pricePerTicket: number; // Corresponde a precio_por_boleto
-  maxNumbers: number; // Corresponde a maximo_numeros
-  drawDate: string; // Corresponde a fecha_sorteo (DATETIME de SQL -> ISO string en JSON)
-  status: 'activa' | 'proxima' | 'finalizada' | 'cancelada'; // Corresponde a estado ENUM
+  description: string; 
+  shortDescription: string; 
+  imageUrl: string; 
+  dataAiHint?: string; 
+  pricePerTicket: number; 
+  maxNumbers: number; 
+  drawDate: string; 
+  status: 'activa' | 'proxima' | 'finalizada' | 'cancelada';
 }
 
 export interface Winner {
-  id: string; // id_ganador
-  raffleId: string; // id_rifa
-  raffleTitle: string; // Necesitará join o consulta separada
-  userId: string; // id_usuario
-  userName: string; // Necesitará join o consulta separada
-  winningNumber?: number; // numero_ganador (puede ser null)
-  prize: string; // premio_descripcion
-  drawDate: string; // fecha_anuncio_ganador
+  id: string; 
+  raffleId: string; 
+  raffleTitle: string; 
+  userId: string; 
+  userName: string; 
+  winningNumber?: number; 
+  prize: string; 
+  drawDate: string; 
 }
 
 export interface PurchasedTicket {
-  id: string; // id_boleto
-  raffleId: string; // id_rifa
-  raffleTitle: string; // Para mostrar, necesitará join o consulta separada
-  userId: string; // id_usuario
-  numbers: number[]; // numeros_seleccionados (JSON array)
-  purchaseDate: string; // fecha_compra
-  totalAmount: number; // monto_total
-  paymentMethod: 'Pago Movil' | 'Cripto Moneda' | 'Zinli'; // metodo_pago
-  status: 'pendiente' | 'pagado' | 'fallido' | 'verificando' | 'cancelado'; // estado_pago
-  transactionId?: string; // id_transaccion_pago
-  paymentConfirmationDate?: string; // fecha_confirmacion_pago
+  id: string; 
+  raffleId: string; 
+  raffleTitle: string; 
+  userId: string; 
+  numbers: number[]; 
+  purchaseDate: string; 
+  totalAmount: number; 
+  paymentMethod: 'Pago Movil' | 'Cripto Moneda' | 'Zinli'; 
+  status: 'pendiente' | 'pagado' | 'fallido' | 'verificando' | 'cancelado';
+  transactionId?: string; 
+  paymentConfirmationDate?: string; 
+}
+
+// Extiende el usuario base de NextAuth
+export interface UserProfile extends NextAuthUser {
+  id: string; // ID de Google (viene de token.sub -> session.user.id)
+  db_id?: string; // Nuestro ID interno de la tabla Usuarios (id_usuario)
+  name: string; // Nombre (de DB si existe, sino de Google)
+  lastName?: string | null; // Apellido (de DB)
+  phone?: string | null; // Teléfono (de DB)
+  idNumber?: string | null; // Número de ID/Cédula (de DB)
+  email: string; // Email (de Google, verificado)
+  image?: string | null; // URL de imagen (de Google o DB)
 }
