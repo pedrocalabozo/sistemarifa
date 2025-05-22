@@ -1,51 +1,70 @@
-
 'use client';
 
-import type { ReactNode } from 'react';
-import React, { createContext, useContext, useEffect } from 'react';
+import { Suspense, createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import type { UserProfile as AppUserProfile } from '@/types'; // Renombrado para evitar colisión
-import { useToast } from '@/hooks/use-toast';
+import type { ReactNode } from 'react';
+import type { User as NextAuthUser } from 'next-auth';
 
-// La interfaz UserProfile aquí debe coincidir con la que se construye en el callback de session de NextAuth
+export interface UserProfile extends NextAuthUser {
+  id: string;
+  name: string;
+  lastName: string;
+  phone: string;
+  idNumber: string;
+  email: string;
+  image?: string | null;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: AppUserProfile | null; // Usar el tipo renombrado
+  user: UserProfile | null;
   isLoading: boolean;
   login: () => void;
   logout: () => void;
-  updateProfile: (profileData: Pick<AppUserProfile, 'name' | 'lastName' | 'phone' | 'idNumber'>) => Promise<void>;
-  isProfileComplete: (userToCheck?: AppUserProfile | null) => boolean;
+  updateProfile: (profileData: Pick<UserProfile, 'name' | 'lastName' | 'phone' | 'idNumber'>) => void;
+  isProfileComplete: (userToCheck?: UserProfile | null) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { data: session, status, update: updateSession } = useSession();
+function AuthHandler() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
 
+  const [internalUser, setInternalUser] = useState<UserProfile | null>(null);
   const isLoadingAuth = status === 'loading';
-  const user = session?.user as AppUserProfile | null | undefined; // Castear a nuestro UserProfile extendido
 
-  const checkProfileComplete = (currentUser: AppUserProfile | null | undefined): boolean => {
+  const checkProfileComplete = (currentUser: UserProfile | null | undefined): boolean => {
     if (!currentUser) return false;
-    // El nombre, email, e imagen usualmente vienen de Google.
-    // Los campos clave para "completar perfil" son los que no vienen de Google.
     return !!(currentUser.name && currentUser.lastName && currentUser.phone && currentUser.idNumber);
   };
 
   useEffect(() => {
-    if (!isLoadingAuth && session?.user) { // Hay una sesión activa
-      const appUser = session.user as AppUserProfile;
-      if (!checkProfileComplete(appUser) && pathname !== '/register' && pathname !== '/login') {
+    if (session?.user) {
+      const storedProfileData = localStorage.getItem(`rifaUser_${session.user.email}`);
+      let profileData: Partial<UserProfile> = storedProfileData ? JSON.parse(storedProfileData) : {};
+
+      const combinedUser: UserProfile = {
+        id: session.user.id || session.user.email!,
+        email: session.user.email!,
+        name: profileData.name || session.user.name || '',
+        lastName: profileData.lastName || '',
+        phone: profileData.phone || '',
+        idNumber: profileData.idNumber || '',
+        image: session.user.image,
+      };
+
+      setInternalUser(combinedUser);
+
+      if (!isLoadingAuth && session?.user && !checkProfileComplete(combinedUser) && pathname !== '/register' && pathname !== '/login') {
         const redirect = searchParams.get('redirect');
-        const redirectTo = redirect ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register';
-        router.push(redirectTo);
+        router.push(redirect ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register');
       }
+    } else if (!isLoadingAuth && !session?.user) {
+      setInternalUser(null);
     }
   }, [session, isLoadingAuth, router, pathname, searchParams]);
 
@@ -56,72 +75,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     await signOut({ callbackUrl: '/login' });
+    setInternalUser(null);
   };
 
-  const updateProfile = async (profileData: Pick<AppUserProfile, 'name' | 'lastName' | 'phone' | 'idNumber'>) => {
-    if (!user) {
-      toast({ title: "Error", description: "No estás autenticado.", variant: "destructive" });
-      return;
-    }
+  const updateProfile = (profileData: Pick<UserProfile, 'name' | 'lastName' | 'phone' | 'idNumber'>) => {
+    if (internalUser && internalUser.email) {
+      const updatedUser = { ...internalUser, ...profileData };
+      setInternalUser(updatedUser);
+      localStorage.setItem(`rifaUser_${internalUser.email}`, JSON.stringify(profileData));
 
-    try {
-      const response = await fetch('/api/user/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profileData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar el perfil');
+      if (checkProfileComplete(updatedUser)) {
+        const redirect = searchParams.get('redirect');
+        router.push(redirect || '/profile');
       }
-      
-      // Actualizar la sesión de NextAuth para reflejar los cambios
-      await updateSession(); 
-      // `updateSession` debería recargar los datos del JWT/session del backend.
-      // Si los callbacks de `auth.ts` están bien, la sesión actualizada tendrá los nuevos datos.
-
-      toast({ title: "Perfil Actualizado", description: "Tu información ha sido actualizada exitosamente." });
-
-      // La redirección ahora se basa en el estado actualizado de la sesión post-updateSession()
-      // El useEffect se encargará de la lógica de redirección si es necesario,
-      // o podemos redirigir explícitamente aquí si se completó el perfil.
-      const updatedUser = session?.user as AppUserProfile; // Re-evaluar user de la sesión (aunque updateSession es async)
-      if (checkProfileComplete(updatedUser)) { // Verificamos con el user potencialmente actualizado
-         const redirect = searchParams.get('redirect');
-         if (pathname === '/register') { // Solo redirigir desde /register si el perfil está ahora completo
-            router.push(redirect || '/profile');
-         } else if (redirect) { // Si había un redirect pendiente y el perfil está completo
-            router.push(redirect);
-         }
-      }
-
-
-    } catch (error: any) {
-      console.error("Error al actualizar perfil:", error);
-      toast({ title: "Error al Actualizar", description: error.message || "Ocurrió un problema al guardar tus datos.", variant: "destructive" });
     }
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated: !!session?.user, 
-      user: user || null, 
-      login, 
-      logout, 
-      updateProfile, 
-      isLoading: isLoadingAuth, 
-      isProfileComplete: (userToCheck?: AppUserProfile | null) => checkProfileComplete(userToCheck !== undefined ? userToCheck : user)
-    }}>
-      {children}
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!session?.user,
+        user: internalUser,
+        login,
+        logout,
+        updateProfile,
+        isLoading: isLoadingAuth,
+        isProfileComplete: () => checkProfileComplete(internalUser),
+      }}
+    >
+      <Suspense fallback={<div>Cargando...</div>}>
+        {children}
+      </Suspense>
     </AuthContext.Provider>
   );
-};
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <AuthHandler />
+    </Suspense>
+  );
+}
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth debe usarse dentro de un AuthProvider');
-  }
+  if (!context) throw new Error('useAuth debe usarse dentro de un AuthProvider');
   return context;
 };
