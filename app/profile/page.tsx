@@ -21,7 +21,7 @@ interface UserProfileFormData {
   phone: string;
   idNumber: string;
 }
-
+console.log(process.env.DB_HOST)
 const mockUserActivity: PurchasedTicket[] = [
   {
     id: 'ticket1',
