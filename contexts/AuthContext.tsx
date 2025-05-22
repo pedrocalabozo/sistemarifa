@@ -1,9 +1,8 @@
 'use client';
 
-import { Suspense, createContext, useContext, useState, useEffect } from 'react';
+import { Suspense, createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import type { ReactNode } from 'react';
 import type { User as NextAuthUser } from 'next-auth';
 
 export interface UserProfile extends NextAuthUser {
@@ -28,7 +27,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function AuthHandler() {
+function AuthHandler({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -103,9 +102,7 @@ function AuthHandler() {
         isProfileComplete: () => checkProfileComplete(internalUser),
       }}
     >
-      <Suspense fallback={<div>Cargando...</div>}>
-        {children}
-      </Suspense>
+      {children}
     </AuthContext.Provider>
   );
 }
@@ -113,7 +110,7 @@ function AuthHandler() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={<div>Cargando...</div>}>
-      <AuthHandler />
+      <AuthHandler>{children}</AuthHandler>
     </Suspense>
   );
 }
