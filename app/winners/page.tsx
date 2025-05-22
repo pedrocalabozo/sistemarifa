@@ -3,7 +3,7 @@ import type { Winner } from "@/types";
 import { Crown, CalendarDays, TicketIcon, UserCircle, Gift } from "lucide-react"; 
 import Image from "next/image";
 
-const mockWinners: Winner[] = [
+const mockWinners: Winner[] = [ 
   {
     id: 'w1',
     raffleId: '4', 
