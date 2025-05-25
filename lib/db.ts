@@ -10,7 +10,7 @@ const db = mysql({
     password: process.env.DB_PASSWORD,
   },
 });
-
+ 
 export async function query(q: string, values?: any[]) {
   try {
     const results = await db.query(q, values);
